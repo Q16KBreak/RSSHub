@@ -59,19 +59,7 @@ async function handler(ctx) {
 
     const feed = await parser.parseURL(currentRSSURL);
 
-    /**
-     * Shares the same `mode=fulltext` trigger condition with
-     * DIYgod/RSSHub/lib/middleware/parameter.ts
-     *
-     * @caution
-     * Due to semantic differences in Nyaa (where `link` = torrent file, `guid` = web page),
-     * the middleware may trigger unnecessary requests to torrent files, and when a 429 error occurs,
-     * you can observe request errors for the torrent file in the console.
-     *
-     * @impact
-     * Does NOT affect the final RSS output. The actual fulltext is correctly fetched from `item.guid`.
-     */
-    if (ctx.req.query('mode')?.toLowerCase() === 'fulltext') {
+    if (ctx.req.query('mode')?.toLowerCase() === 'full') {
         const limit = Number.parseInt(ctx.req.query('limit')) || 6; // prevent 429 rate limiting
         const items = await Promise.all(
             feed.items.slice(0, limit).map((item) =>
@@ -80,8 +68,9 @@ async function handler(ctx) {
                     const $ = load(response);
 
                     item.description = md.render($('div#torrent-description.panel-body[markdown-text]').text());
-                    item.enclosure_url = `magnet:?xt=urn:btih:${item.infoHash}`;
+                    item.enclosure_url = item.link;
                     item.enclosure_type = 'application/x-bittorrent';
+                    item.link = item.guid;
                     return item;
                 })
             )
@@ -98,6 +87,7 @@ async function handler(ctx) {
             item.description = item.content;
             item.enclosure_url = `magnet:?xt=urn:btih:${item.infoHash}`;
             item.enclosure_type = 'application/x-bittorrent';
+            item.link = item.guid;
             return item;
         });
 
