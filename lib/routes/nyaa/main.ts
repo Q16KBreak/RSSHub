@@ -68,7 +68,7 @@ async function handler(ctx) {
                     const $ = load(response);
 
                     item.description = md.render($('div#torrent-description.panel-body[markdown-text]').text());
-                    item.enclosure_url = item.link;
+                    item.enclosure_url = `magnet:?xt=urn:btih:${item.infoHash}`;
                     item.enclosure_type = 'application/x-bittorrent';
                     item.link = item.guid;
                     return item;
